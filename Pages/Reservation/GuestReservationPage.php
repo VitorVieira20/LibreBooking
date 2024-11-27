@@ -30,6 +30,9 @@ class GuestReservationPage extends NewReservationPage implements IGuestReservati
 {
     public function PageLoad()
     {
+
+        $this->ValidateURI();
+
         if (Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_ALLOW_GUEST_BOOKING, new BooleanConverter())) {
             $this->presenter = $this->GetPresenter();
             $this->presenter->PageLoad();
@@ -58,6 +61,25 @@ class GuestReservationPage extends NewReservationPage implements IGuestReservati
         }
 
         return 'Reservation/collect-guest.tpl';
+    }
+
+    protected function ValidateURI()
+    {
+        $requestURI = $_SERVER['REQUEST_URI'];
+        $segments = explode('/', $requestURI);
+
+        if (
+            isset($segments[2]) ||
+            preg_match('/%22.*%22/', $requestURI) ||
+            preg_match('/".*"/', urldecode($requestURI)) ||
+            preg_match('/%27.*%27/', $requestURI) ||
+            preg_match("/'.*'/", urldecode($requestURI)) ||
+            preg_match('/%3Cscript%3E/', $requestURI) ||
+            preg_match('/<script>/', urldecode($requestURI))
+        ) {
+            header("Location: /guest-reservation.php");
+            exit;
+        }
     }
 
     public function GuestInformationCollected()
