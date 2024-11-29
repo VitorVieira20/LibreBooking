@@ -31,7 +31,13 @@ class GuestReservationPage extends NewReservationPage implements IGuestReservati
     public function PageLoad()
     {
 
-        $this->ValidateURI();
+        URIScriptValidator::validate($_SERVER['REQUEST_URI'], '/dashboard.php');
+
+        if (preg_match('/(?:\?|&)(redirect)=([^&]+)/', $_SERVER['REQUEST_URI'], $matches)) {
+            ParamsValidator::validate(RouteParamsKeys::GUEST_RESERVATION_FROM_CALENDAR, $_SERVER['REQUEST_URI'], '/view-calendar.php');
+        } else {
+            ParamsValidator::validate(RouteParamsKeys::GUEST_RESERVATION_FROM_SCHEDULE, $_SERVER['REQUEST_URI'], '/view-schedule.php');
+        }
 
         if (Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_ALLOW_GUEST_BOOKING, new BooleanConverter())) {
             $this->presenter = $this->GetPresenter();
@@ -41,104 +47,6 @@ class GuestReservationPage extends NewReservationPage implements IGuestReservati
         } else {
             $this->RedirectToError(ErrorMessages::INSUFFICIENT_PERMISSIONS);
         }
-    }
-
-    protected function GetPresenter()
-    {
-        return new GuestReservationPresenter(
-            $this,
-            new GuestRegistration(new PasswordEncryption(), new UserRepository(), new GuestRegistrationNotificationStrategy(), new GuestReservationPermissionStrategy($this)),
-            new WebAuthentication(PluginManager::Instance()->LoadAuthentication()),
-            $this->LoadInitializerFactory(),
-            new NewReservationPreconditionService()
-        );
-    }
-
-    protected function GetTemplateName()
-    {
-        if ($this->GuestInformationCollected()) {
-            return parent::GetTemplateName();
-        }
-
-        return 'Reservation/collect-guest.tpl';
-    }
-
-    protected function ValidateURI()
-    {
-        $requestURI = $_SERVER['REQUEST_URI'];
-        $segments = explode('/', $requestURI);
-
-        $possibleScripts = $this->ValidatePossibleScripts(($requestURI));
-
-        if (isset($segments[2]) || $possibleScripts) {
-            header("Location: /dashboard.php");
-            exit;
-        }
-
-        if (preg_match('/(?:\?|&)(redirect)=([^&]+)/', $requestURI, $matches)) {
-            $this->RetrieveURIParamsFromCalendar($requestURI, urldecode($matches[2]));
-        } else {
-            $this->RetrieveURIParamsFromSchedule($requestURI);
-        }
-    }
-
-    protected function ValidatePossibleScripts($requestURI)
-    {
-        if (
-            preg_match('/%22.*%22/', $requestURI) ||
-            preg_match('/".*"/', urldecode($requestURI)) ||
-            preg_match('/%27.*%27/', $requestURI) ||
-            preg_match("/'.*'/", urldecode($requestURI)) ||
-            preg_match('/%3Cscript%3E/', $requestURI) ||
-            preg_match('/<script>/', urldecode($requestURI))
-        ) {
-            return true;
-        }
-
-        return false;
-    }
-
-    protected function RetrieveURIParamsFromSchedule($requestURI)
-    {
-        $segments = explode('?', $requestURI);
-
-        if (!isset($segments[1]) || $segments[1] === "") {
-            header("Location: /view-schedule.php");
-            exit;
-        }
-
-        $rid = $sid = $rd = $sd = $ed = null;
-
-        preg_match('/rid=(\d+)&/', $requestURI, $rid);
-        preg_match('/sid=(\d+)&/', $requestURI, $sid);
-        preg_match('/rd=([^&]*)/', $requestURI, $rd);
-        preg_match('/sd=([^&]*)/', $requestURI, $sd);
-        preg_match('/ed=([^&]*)/', $requestURI, $ed);
-
-        if (empty($rid[1]) || empty($sid[1]) || empty($rd[1]) || empty($sd[1]) || empty($ed[1])) {
-            header("Location: /view-schedule.php");
-            exit;
-        }
-
-        $rd = htmlspecialchars(urldecode($rd[1]), ENT_QUOTES, 'UTF-8');
-        $sd = htmlspecialchars(urldecode($sd[1]), ENT_QUOTES, 'UTF-8');
-        $ed = htmlspecialchars(urldecode($ed[1]), ENT_QUOTES, 'UTF-8');
-
-        $validParams = $this->ValidateURIParamsFromSchedule($rid[1], $sid[1], $rd, $sd, $ed);
-
-        if (!$validParams) {
-            header("Location: /view-schedule.php");
-            exit;
-        }
-    }
-
-    protected function ValidateURIParamsFromSchedule($rid, $sid, $rd, $sd, $ed)
-    {
-        $validRd = preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/', $rd, $rdMatches);
-        $validSd = preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) (\d|1\d|2[0-3]):([0-5]\d):([0-5]\d)$/', $sd, $sdMatches);
-        $validEd = preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) (\d|1\d|2[0-3]):([0-5]\d):([0-5]\d)$/', $ed, $edMatches);
-
-        return (is_numeric($rid) && is_numeric($sid) && $validRd && $validSd && $validEd);
     }
 
     protected function RetrieveURIParamsFromCalendar($requestURI, $redirectValue)
@@ -187,6 +95,26 @@ class GuestReservationPage extends NewReservationPage implements IGuestReservati
 
 
         return ($validSd && $validEd && $validCt && $validStart);
+    }
+
+    protected function GetPresenter()
+    {
+        return new GuestReservationPresenter(
+            $this,
+            new GuestRegistration(new PasswordEncryption(), new UserRepository(), new GuestRegistrationNotificationStrategy(), new GuestReservationPermissionStrategy($this)),
+            new WebAuthentication(PluginManager::Instance()->LoadAuthentication()),
+            $this->LoadInitializerFactory(),
+            new NewReservationPreconditionService()
+        );
+    }
+
+    protected function GetTemplateName()
+    {
+        if ($this->GuestInformationCollected()) {
+            return parent::GetTemplateName();
+        }
+
+        return 'Reservation/collect-guest.tpl';
     }
 
     public function GuestInformationCollected()
