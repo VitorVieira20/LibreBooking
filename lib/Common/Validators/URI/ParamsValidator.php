@@ -43,6 +43,9 @@ class ParamsValidator
             case ParamsValidatorKeys::EXISTS:
                 return ParamsValidatorMethods::existsInURLValidator($value, $requestURI);
 
+            case ParamsValidatorKeys::REDIRECT_GUEST_RESERVATION:
+                return ParamsValidatorMethods::redirectGuestReservationValidator($requestURI);
+
             default:
                 return false;
         }

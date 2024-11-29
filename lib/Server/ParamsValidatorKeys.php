@@ -11,5 +11,5 @@ class ParamsValidatorKeys
     public const DATE = 'd';
     public const SIMPLE_DATETIME = 'sdt';
     public const COMPLEX_DATETIME = 'cdt';
-    public const REDIRECT = 'r';
+    public const REDIRECT_GUEST_RESERVATION = 'rgr';
 }

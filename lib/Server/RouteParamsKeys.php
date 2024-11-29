@@ -18,7 +18,7 @@ class RouteParamsKeys
         QueryStringKeys::SCHEDULE_ID => ParamsValidatorKeys::EXISTS,
         QueryStringKeys::REPORT_ID => ParamsValidatorKeys::EXISTS,
         QueryStringKeys::START_DATE => ParamsValidatorKeys::SIMPLE_DATETIME,
-        QueryStringKeys::END_DATE => ParamsValidatorKeys::SIMPLE_DATETIME
-        //QueryStringKeys::REDIRECT => ParamsValidatorKeys::REDIRECT
+        QueryStringKeys::END_DATE => ParamsValidatorKeys::SIMPLE_DATETIME,
+        QueryStringKeys::REDIRECT => ParamsValidatorKeys::REDIRECT_GUEST_RESERVATION
     ];
 }
