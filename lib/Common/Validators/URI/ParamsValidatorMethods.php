@@ -17,9 +17,12 @@ class ParamsValidatorMethods implements IParamsValidatorMethods
     public static function existsInURLValidator(string $param, string $requestURI): bool
     {
         $pattern = "/(?:\?|&)" . preg_quote($param, '/') . "=([^&]*)/";
-        $possibleScripts = self::ValidatePossibleScripts(($requestURI));
 
-        return preg_match($pattern, $requestURI) === 1 && !$possibleScripts;
+        $possibleScripts = self::ValidatePossibleScripts($requestURI);
+
+        if (preg_match($pattern, $requestURI, $matches)) {
+            return $matches[1] === "" && !$possibleScripts;
+        }
     }
 
 
@@ -35,6 +38,29 @@ class ParamsValidatorMethods implements IParamsValidatorMethods
 
         return false;
     }
+
+    public static function simpleDateValidatorList(string $param, string $requestURI): bool
+    {
+        $pattern = "/[?&]" . preg_quote($param, '/') . "=([^&]*)/";
+        $possibleScripts = self::ValidatePossibleScripts(($requestURI));
+
+        if (preg_match($pattern, $requestURI, $matches)) {
+            $value = htmlspecialchars(urldecode($matches[1]), ENT_QUOTES, 'UTF-8');
+
+            $dates = explode(',', $value);
+
+            foreach ($dates as $date) {
+                if (!preg_match('/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[12]?\d|3[01])$/', $date)) {
+                    return false;
+                }
+            }
+
+            return !$possibleScripts;
+        }
+
+        return false;
+    }
+
 
     public static function simpleDateTimeValidator(string $param, string $requestURI): bool
     {
@@ -92,10 +118,10 @@ class ParamsValidatorMethods implements IParamsValidatorMethods
     private static function validatePossibleScripts(string $requestURI): bool
     {
         return preg_match('/%22.*%22/', $requestURI) ||
-               preg_match('/".*"/', urldecode($requestURI)) ||
-               preg_match('/%27.*%27/', $requestURI) ||
-               preg_match("/'.*'/", urldecode($requestURI)) ||
-               preg_match('/%3Cscript%3E/', $requestURI) ||
-               preg_match('/<script>/', urldecode($requestURI));
+            preg_match('/".*"/', urldecode($requestURI)) ||
+            preg_match('/%27.*%27/', $requestURI) ||
+            preg_match("/'.*'/", urldecode($requestURI)) ||
+            preg_match('/%3Cscript%3E/', $requestURI) ||
+            preg_match('/<script>/', urldecode($requestURI));
     }
 }

@@ -279,6 +279,10 @@ class SchedulePage extends ActionPage implements ISchedulePage
 
     public function ProcessPageLoad()
     {
+
+        URIScriptValidator::validate($_SERVER['REQUEST_URI'], '/schedule.php');
+        ParamsValidator::validate(RouteParamsKeys::SCHEDULE, $_SERVER['REQUEST_URI'], '/', true);
+
         $start = microtime(true);
 
         $user = ServiceLocator::GetServer()->GetUserSession();

@@ -41,6 +41,9 @@ class ViewSchedulePage extends SchedulePage
 
     public function ProcessPageLoad()
     {
+        URIScriptValidator::validate($_SERVER['REQUEST_URI'], '/view-schedule.php');
+        ParamsValidator::validate(RouteParamsKeys::SCHEDULE, $_SERVER['REQUEST_URI'], '/view-schedule.php', true);
+
         $user = new NullUserSession();
         $this->_presenter->PageLoad($user);
 
